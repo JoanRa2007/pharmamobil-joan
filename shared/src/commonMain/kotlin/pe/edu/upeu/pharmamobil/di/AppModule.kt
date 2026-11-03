@@ -23,6 +23,7 @@ import pe.edu.upeu.pharmamobil.domain.repository.ProductoLocalRepository
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRemotoRepository
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
 import pe.edu.upeu.pharmamobil.domain.repository.SesionRepository
+import pe.edu.upeu.pharmamobil.domain.usecase.AvisarFallidasUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.CerrarSesionUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.EliminarProductoUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.IniciarSesionUseCase
@@ -82,6 +83,7 @@ val domainModule = module {
     factory { ObservarPendientesUseCase(get()) }
     factory { ObservarFallidasUseCase(get()) }
     factory { ReintentarFallidasUseCase(get()) }
+    factory { AvisarFallidasUseCase(get(), get()) }
     factory { SincronizarUseCase(get(), get(), get(), get(CALIFICADOR_RELOJ)) }
     factory { RegistrarClienteUseCase(get()) }
     factory { ListarClientesUseCase(get()) }
@@ -91,8 +93,8 @@ val presentationModule = module {
     single { Avisos() }
     viewModel { RaizViewModel(get(), get()) }
     viewModel { LoginViewModel(get()) }
-    viewModel { PerfilViewModel(get(), get()) }
-    viewModel { ProductoViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { PerfilViewModel(get(), get(), get()) }
+    viewModel { ProductoViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ClienteViewModel(get(), get()) }
 }
 

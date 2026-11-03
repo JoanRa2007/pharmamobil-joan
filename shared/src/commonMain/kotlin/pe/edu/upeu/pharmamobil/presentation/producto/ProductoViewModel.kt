@@ -14,6 +14,7 @@ import pe.edu.upeu.pharmamobil.domain.model.ErrorApi
 import pe.edu.upeu.pharmamobil.domain.model.Permisos
 import pe.edu.upeu.pharmamobil.domain.model.Resultado
 import pe.edu.upeu.pharmamobil.domain.repository.MonitorConexion
+import pe.edu.upeu.pharmamobil.domain.usecase.AvisarFallidasUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.EliminarProductoUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarCategoriasUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarFallidasUseCase
@@ -40,6 +41,7 @@ class ProductoViewModel(
     observarPendientes: ObservarPendientesUseCase,
     observarFallidas: ObservarFallidasUseCase,
     private val reintentarFallidasUseCase: ReintentarFallidasUseCase,
+    private val avisarFallidas: AvisarFallidasUseCase,
     private val registrarProducto: RegistrarProductoUseCase,
     private val eliminarProducto: EliminarProductoUseCase,
     private val sincronizarUseCase: SincronizarUseCase,
@@ -173,6 +175,7 @@ class ProductoViewModel(
                         val resumen = r.dato
                         if (resumen.fallidos > 0) {
                             avisos.mostrar(Aviso(resumen.texto(), "Reintentar") { reintentarFallidas() })
+                            avisarFallidas(resumen.fallidos) // notificacion del sistema, si el permiso lo permite
                         } else {
                             avisos.mostrar(resumen.texto())
                         }

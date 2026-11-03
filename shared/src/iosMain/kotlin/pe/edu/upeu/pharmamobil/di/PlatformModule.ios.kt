@@ -6,10 +6,14 @@ import org.koin.core.module.Module
 import org.koin.dsl.module
 import pe.edu.upeu.pharmamobil.data.AlmacenSesionIos
 import pe.edu.upeu.pharmamobil.data.BaseLocalIos
+import pe.edu.upeu.pharmamobil.data.GestorPermisosIos
+import pe.edu.upeu.pharmamobil.data.NotificadorIos
 import pe.edu.upeu.pharmamobil.data.MonitorConexionIos
 import pe.edu.upeu.pharmamobil.data.local.AlmacenSeguro
 import pe.edu.upeu.pharmamobil.data.local.BaseLocal
 import pe.edu.upeu.pharmamobil.data.remote.ConfigPlataforma
+import pe.edu.upeu.pharmamobil.domain.permiso.GestorPermisos
+import pe.edu.upeu.pharmamobil.domain.port.NotificadorSistema
 import pe.edu.upeu.pharmamobil.domain.repository.MonitorConexion
 
 /** Dependencias de iOS. El simulador de iOS llega a la PC por localhost. */
@@ -19,4 +23,6 @@ actual val platformModule: Module = module {
     single<AlmacenSeguro> { AlmacenSesionIos() }
     single<BaseLocal> { BaseLocalIos() }
     single<MonitorConexion> { MonitorConexionIos() }
+    single<GestorPermisos> { GestorPermisosIos() }
+    single<NotificadorSistema> { NotificadorIos() }
 }
