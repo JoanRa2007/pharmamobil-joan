@@ -4,7 +4,13 @@ data class Producto(
     val id:Long,
     val nombre:String,
     val precio:Double,
-    val stock: Int
+    val stock: Int,
+    // Unidad 2 (PharmaSoft): categoria, estado y marca de envio offline-first
+    val categoriaId: Long = 0,
+    val categoriaNombre: String = "",
+    val estado: Boolean = true,
+    /** true mientras el cambio no haya llegado al servidor (id negativo si es una creacion). */
+    val pendiente: Boolean = false,
 ) {
 
 
