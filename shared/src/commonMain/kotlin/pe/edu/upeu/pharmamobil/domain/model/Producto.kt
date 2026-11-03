@@ -11,6 +11,9 @@ data class Producto(
     val estado: Boolean = true,
     /** true mientras el cambio no haya llegado al servidor (id negativo si es una creacion). */
     val pendiente: Boolean = false,
+    // Sesion 13: estado de envio de la fila pendiente
+    val intentos: Int = 0,
+    val ultimoError: String? = null,
 ) {
 
 
@@ -33,7 +36,16 @@ data class Producto(
     val requiereReposicion: Boolean
         get() = stock < STOCK_MINIMO
 
+    /** Agoto los intentos o el servidor lo rechazo: no se reintenta solo y se muestra al usuario. */
+    val fallido: Boolean
+        get() = pendiente && intentos >= ColaEnvio.MAX_INTENTOS
+
     companion object {
         const val STOCK_MINIMO = 10
     }
+}
+
+/** Parametros de la cola de envio de filas pendientes. */
+object ColaEnvio {
+    const val MAX_INTENTOS = 5
 }

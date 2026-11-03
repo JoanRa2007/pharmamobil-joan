@@ -14,6 +14,7 @@ import pe.edu.upeu.pharmamobil.data.remote.dto.aDominio
 import pe.edu.upeu.pharmamobil.data.remote.dto.aRequest
 import pe.edu.upeu.pharmamobil.db.PharmaDatabase
 import pe.edu.upeu.pharmamobil.domain.model.Categoria
+import pe.edu.upeu.pharmamobil.domain.model.ColaEnvio
 import pe.edu.upeu.pharmamobil.domain.model.ErrorApi
 import pe.edu.upeu.pharmamobil.domain.model.Producto
 import pe.edu.upeu.pharmamobil.domain.model.Resultado
@@ -100,7 +101,7 @@ class ProductoRepositoryImpl(
     }
 
     override suspend fun enviarPendientes(): Resultado<Pair<Int, List<String>>> {
-        val pendientes = withContext(io) { q.productosPendientes().executeAsList().map { it.aDominio() } }
+        val pendientes = withContext(io) { q.pendientesPorEnviar(ColaEnvio.MAX_INTENTOS.toLong()).executeAsList().map { it.aDominio() } }
         var enviadas = 0
         val rechazos = mutableListOf<String>()
         for (p in pendientes) {

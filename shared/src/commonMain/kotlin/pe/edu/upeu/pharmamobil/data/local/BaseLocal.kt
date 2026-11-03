@@ -20,6 +20,8 @@ internal fun pe.edu.upeu.pharmamobil.Producto.aDominio() = pe.edu.upeu.pharmamob
     categoriaNombre = categoriaNombre,
     estado = estado == 1L,
     pendiente = pendiente == 1L,
+    intentos = intentos.toInt(),
+    ultimoError = ultimoError,
 )
 
 internal fun pe.edu.upeu.pharmamobil.domain.model.Producto.aFila() = pe.edu.upeu.pharmamobil.Producto(
@@ -31,6 +33,8 @@ internal fun pe.edu.upeu.pharmamobil.domain.model.Producto.aFila() = pe.edu.upeu
     categoriaId = categoriaId,
     categoriaNombre = categoriaNombre,
     pendiente = if (pendiente) 1L else 0L,
+    intentos = intentos.toLong(),
+    ultimoError = ultimoError,
 )
 
 internal fun pe.edu.upeu.pharmamobil.Categoria.aDominio() =

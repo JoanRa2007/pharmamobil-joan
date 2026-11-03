@@ -12,7 +12,10 @@ CREATE TABLE producto (
     estado INTEGER NOT NULL,
     categoriaId INTEGER NOT NULL,
     categoriaNombre TEXT NOT NULL,
-    pendiente INTEGER NOT NULL
+    pendiente INTEGER NOT NULL,
+    -- Sesion 13: estado de envio de cada fila pendiente (migracion 1.sqm)
+    intentos INTEGER NOT NULL DEFAULT 0,
+    ultimoError TEXT
 );
 
 -- Clave/valor para datos de control (instante de la ultima sincronizacion).
@@ -41,12 +44,12 @@ obtenerProducto:
 SELECT * FROM producto WHERE id = ?;
 
 guardarProducto:
-INSERT OR REPLACE INTO producto(id, nombre, precio, stock, estado, categoriaId, categoriaNombre, pendiente)
+INSERT OR REPLACE INTO producto(id, nombre, precio, stock, estado, categoriaId, categoriaNombre, pendiente, intentos, ultimoError)
 VALUES ?;
 
 -- Al bajar del servidor no se pisa una fila con cambios locales pendientes.
 guardarProductoSiNoPendiente:
-INSERT OR IGNORE INTO producto(id, nombre, precio, stock, estado, categoriaId, categoriaNombre, pendiente)
+INSERT OR IGNORE INTO producto(id, nombre, precio, stock, estado, categoriaId, categoriaNombre, pendiente, intentos, ultimoError)
 VALUES ?;
 
 eliminarProducto:
@@ -59,11 +62,28 @@ DELETE FROM producto WHERE pendiente = 0;
 siguienteIdLocal:
 SELECT COALESCE(MIN(id), 0) FROM producto;
 
-productosPendientes:
-SELECT * FROM producto WHERE pendiente = 1 ORDER BY CASE WHEN id < 0 THEN -id ELSE id END;
+-- ===== Cola de envio (sesion 13) =====
+-- Una fila con intentos >= maxIntentos esta FALLIDA: no se reintenta sola y se muestra al usuario.
+pendientesPorEnviar:
+SELECT * FROM producto WHERE pendiente = 1 AND intentos < :maxIntentos
+ORDER BY CASE WHEN id < 0 THEN -id ELSE id END;
 
 contarPendientes:
-SELECT COUNT(*) FROM producto WHERE pendiente = 1;
+SELECT COUNT(*) FROM producto WHERE pendiente = 1 AND intentos < :maxIntentos;
+
+contarFallidas:
+SELECT COUNT(*) FROM producto WHERE pendiente = 1 AND intentos >= :maxIntentos;
+
+sumarIntento:
+UPDATE producto SET intentos = intentos + 1, ultimoError = ? WHERE id = ?;
+
+-- Fallo permanente: se agota la fila de una vez para que no se reintente sola.
+marcarFallida:
+UPDATE producto SET intentos = :maxIntentos, ultimoError = :motivo WHERE id = :id;
+
+-- Accion del usuario «Reintentar ahora»: las fallidas vuelven a la cola.
+reintentarFallidas:
+UPDATE producto SET intentos = 0 WHERE pendiente = 1 AND intentos >= :maxIntentos;
 
 -- ================= Metadatos =================
 guardarMetadato:
