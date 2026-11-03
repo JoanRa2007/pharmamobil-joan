@@ -1,0 +1,73 @@
+-- Base local de PharmaMobil (offline-first). Autor: Joan Rodriguez
+CREATE TABLE categoria (
+    id INTEGER NOT NULL PRIMARY KEY,
+    nombre TEXT NOT NULL
+);
+
+CREATE TABLE producto (
+    id INTEGER NOT NULL PRIMARY KEY,
+    nombre TEXT NOT NULL,
+    precio REAL NOT NULL,
+    stock INTEGER NOT NULL,
+    estado INTEGER NOT NULL,
+    categoriaId INTEGER NOT NULL,
+    categoriaNombre TEXT NOT NULL,
+    pendiente INTEGER NOT NULL
+);
+
+-- Clave/valor para datos de control (instante de la ultima sincronizacion).
+CREATE TABLE metadato (
+    clave TEXT NOT NULL PRIMARY KEY,
+    valor TEXT NOT NULL
+);
+
+-- ================= Categorias =================
+observarCategorias:
+SELECT * FROM categoria ORDER BY nombre;
+
+guardarCategoria:
+INSERT OR REPLACE INTO categoria(id, nombre) VALUES (?, ?);
+
+eliminarCategorias:
+DELETE FROM categoria;
+
+-- ================= Productos =================
+observarProductos:
+SELECT * FROM producto
+WHERE (:texto IS NULL OR nombre LIKE '%' || :texto || '%')
+ORDER BY nombre;
+
+obtenerProducto:
+SELECT * FROM producto WHERE id = ?;
+
+guardarProducto:
+INSERT OR REPLACE INTO producto(id, nombre, precio, stock, estado, categoriaId, categoriaNombre, pendiente)
+VALUES ?;
+
+-- Al bajar del servidor no se pisa una fila con cambios locales pendientes.
+guardarProductoSiNoPendiente:
+INSERT OR IGNORE INTO producto(id, nombre, precio, stock, estado, categoriaId, categoriaNombre, pendiente)
+VALUES ?;
+
+eliminarProducto:
+DELETE FROM producto WHERE id = ?;
+
+eliminarSincronizados:
+DELETE FROM producto WHERE pendiente = 0;
+
+-- COALESCE evita el NULL de la tabla vacia; minOf en Kotlin garantiza un id provisional negativo.
+siguienteIdLocal:
+SELECT COALESCE(MIN(id), 0) FROM producto;
+
+productosPendientes:
+SELECT * FROM producto WHERE pendiente = 1 ORDER BY CASE WHEN id < 0 THEN -id ELSE id END;
+
+contarPendientes:
+SELECT COUNT(*) FROM producto WHERE pendiente = 1;
+
+-- ================= Metadatos =================
+guardarMetadato:
+INSERT OR REPLACE INTO metadato(clave, valor) VALUES (?, ?);
+
+observarMetadato:
+SELECT valor FROM metadato WHERE clave = ?;
