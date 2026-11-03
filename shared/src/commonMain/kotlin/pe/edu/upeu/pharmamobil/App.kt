@@ -47,6 +47,22 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
+import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.material.icons.filled.AccountCircle
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import org.koin.compose.koinInject
+import pe.edu.upeu.pharmamobil.presentation.comun.Avisos
+import pe.edu.upeu.pharmamobil.presentation.perfil.PerfilScreen
+import pe.edu.upeu.pharmamobil.presentation.sesion.EstadoRaiz
+import pe.edu.upeu.pharmamobil.presentation.sesion.LoginScreen
+import pe.edu.upeu.pharmamobil.presentation.sesion.RaizViewModel
 import org.koin.compose.KoinContext
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -68,7 +84,8 @@ private val DESTINOS = listOf(
     Destino(Screen.Inicio, "Inicio", Icons.Default.Home),
     Destino(Screen.Productos, "Productos", Icons.Default.Medication),
     Destino(Screen.Clientes, "Clientes", Icons.Default.Person),
-    Destino(Screen.Pedidos, "Pedidos", Icons.Default.ShoppingCart)
+    Destino(Screen.Pedidos, "Pedidos", Icons.Default.ShoppingCart),
+    Destino(Screen.Perfil, "Mi perfil", Icons.Default.AccountCircle)
 )
 
 
@@ -98,10 +115,31 @@ fun App() = KoinContext {
 
     val scope = rememberCoroutineScope()
 
+    // Unidad 2: la sesion decide entre el login y el area protegida.
+    val raiz = koinViewModel<RaizViewModel>()
+    val estado by raiz.estado.collectAsStateWithLifecycle()
+    val avisos = koinInject<Avisos>()
+    val snackbar = remember { SnackbarHostState() }
+
+    LaunchedEffect(avisos) {
+        avisos.flujo.collect { aviso ->
+            val r = snackbar.showSnackbar(
+                message = aviso.texto,
+                actionLabel = aviso.accion,
+                duration = if (aviso.accion != null) SnackbarDuration.Long else SnackbarDuration.Short
+            )
+            if (r == SnackbarResult.ActionPerformed) aviso.alAccionar?.invoke()
+        }
+    }
+
     PharmaMobilTheme(
         darkTheme = darkTheme
     ) {
-
+      Box(modifier = Modifier.fillMaxSize()) {
+        when (estado) {
+          EstadoRaiz.Cargando -> CircularProgressIndicator(modifier = Modifier.align(Alignment.Center))
+          EstadoRaiz.SinSesion -> Surface(modifier = Modifier.fillMaxSize()) { LoginScreen() }
+          is EstadoRaiz.ConSesion ->
         ModalNavigationDrawer(
 
             drawerState = drawerState,
@@ -232,10 +270,19 @@ fun App() = KoinContext {
                                 descripcion = "Este módulo llega en una próxima sesión del curso.",
                                 modifier = Modifier.align(Alignment.Center)
                             )
+
+                        Screen.Perfil ->
+                            PerfilScreen()
                     }
                 }
             }
         }
+        }
+        SnackbarHost(
+            hostState = snackbar,
+            modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(bottom = 16.dp)
+        )
+      }
     }
 }
 
