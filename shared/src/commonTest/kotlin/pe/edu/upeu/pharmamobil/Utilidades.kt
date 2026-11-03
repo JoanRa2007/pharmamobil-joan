@@ -21,9 +21,18 @@ import pe.edu.upeu.pharmamobil.data.repository.ProductoRepositoryImpl
 import pe.edu.upeu.pharmamobil.domain.usecase.SincronizarUseCase
 import pe.edu.upeu.pharmamobil.db.PharmaDatabase
 import pe.edu.upeu.pharmamobil.domain.model.Sesion
+import pe.edu.upeu.pharmamobil.domain.port.Telemetria
 
 /** Controlador de base en memoria (lo aporta cada plataforma de prueba). */
 expect fun crearDriverPrueba(): SqlDriver
+
+/** Telemetria falsa: guarda lo registrado para poder verificarlo. */
+class TelemetriaFalsa : Telemetria {
+    val errores = mutableListOf<Pair<Throwable, Map<String, String>>>()
+    val eventos = mutableListOf<Pair<String, Map<String, String>>>()
+    override fun registrarError(e: Throwable, contexto: Map<String, String>) { errores += e to contexto }
+    override fun registrarEvento(nombre: String, datos: Map<String, String>) { eventos += nombre to datos }
+}
 
 class AlmacenEnMemoria : AlmacenSeguro {
     var sesion: Sesion? = Sesion("token-prueba", "almacen", "Jorge Mendoza", listOf("ALMACENERO"),
@@ -51,7 +60,8 @@ open class Entorno(manejador: suspend MockRequestHandleScope.(HttpRequestData) -
     val esperas = mutableListOf<Long>()
 
     /** Caso de uso con la espera registrada en vez de real: las pruebas no duermen. */
-    open fun sincronizar() = SincronizarUseCase(local, remoto, productos, ahora = { 1L }, esperar = { esperas += it })
+    val telemetria = TelemetriaFalsa()
+    open fun sincronizar() = SincronizarUseCase(local, remoto, productos, telemetria, ahora = { 1L }, esperar = { esperas += it })
 }
 
 fun MockRequestHandleScope.json(cuerpo: String, estado: HttpStatusCode = HttpStatusCode.OK) =

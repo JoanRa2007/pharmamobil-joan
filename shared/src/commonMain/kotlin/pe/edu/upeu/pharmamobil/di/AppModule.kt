@@ -8,6 +8,7 @@ import org.koin.core.module.Module
 import org.koin.core.module.dsl.viewModel
 import org.koin.core.qualifier.named
 import org.koin.dsl.module
+import pe.edu.upeu.pharmamobil.data.firebase.TelemetriaFirebase
 import pe.edu.upeu.pharmamobil.data.local.BaseLocal
 import pe.edu.upeu.pharmamobil.data.local.EstadoSesion
 import pe.edu.upeu.pharmamobil.data.local.abrir
@@ -18,6 +19,7 @@ import pe.edu.upeu.pharmamobil.data.repository.EnvioRepositorioRest
 import pe.edu.upeu.pharmamobil.data.repository.ProductoLocalRepositoryImpl
 import pe.edu.upeu.pharmamobil.data.repository.ProductoRepositoryImpl
 import pe.edu.upeu.pharmamobil.data.repository.SesionRepositoryImpl
+import pe.edu.upeu.pharmamobil.domain.port.Telemetria
 import pe.edu.upeu.pharmamobil.domain.repository.ClienteRepository
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoLocalRepository
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRemotoRepository
@@ -67,6 +69,7 @@ val dataModule = module {
     single<ProductoRepository> { ProductoRepositoryImpl(get(), get(), get(CALIFICADOR_IO)) }
     single<ProductoLocalRepository> { ProductoLocalRepositoryImpl(get(), get(CALIFICADOR_IO)) }
     single<ProductoRemotoRepository> { EnvioRepositorioRest(get()) }
+    single<Telemetria> { TelemetriaFirebase() }
     single<ClienteRepository> { ClienteRepositorioEnMemoria() }
 }
 
@@ -84,7 +87,7 @@ val domainModule = module {
     factory { ObservarFallidasUseCase(get()) }
     factory { ReintentarFallidasUseCase(get()) }
     factory { AvisarFallidasUseCase(get(), get()) }
-    factory { SincronizarUseCase(get(), get(), get(), get(CALIFICADOR_RELOJ)) }
+    factory { SincronizarUseCase(get(), get(), get(), get(), get(CALIFICADOR_RELOJ)) }
     factory { RegistrarClienteUseCase(get()) }
     factory { ListarClientesUseCase(get()) }
 }

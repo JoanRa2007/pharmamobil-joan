@@ -7,6 +7,7 @@ import pe.edu.upeu.pharmamobil.domain.model.ErrorApi
 import pe.edu.upeu.pharmamobil.domain.model.Resultado
 import pe.edu.upeu.pharmamobil.domain.model.ResultadoEnvio
 import pe.edu.upeu.pharmamobil.domain.model.ResumenSincronizacion
+import pe.edu.upeu.pharmamobil.domain.port.Telemetria
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoLocalRepository
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRemotoRepository
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
@@ -21,6 +22,7 @@ class SincronizarUseCase(
     private val local: ProductoLocalRepository,
     private val remoto: ProductoRemotoRepository,
     private val catalogo: ProductoRepository,
+    private val telemetria: Telemetria,
     private val ahora: () -> Long,
     private val esperar: suspend (Long) -> Unit = { delay(it) },
 ) {
@@ -39,6 +41,10 @@ class SincronizarUseCase(
                     local.marcarFallida(fila.id, r.motivo)
                     fallidas++
                     motivos += "${fila.nombre}: ${r.motivo}"
+                    telemetria.registrarEvento(
+                        "envio_rechazado",
+                        mapOf("pantalla" to "productos", "operacion" to if (fila.id < 0) "crear_producto" else "corregir_producto"),
+                    )
                 }
                 is ResultadoEnvio.Transitorio -> {
                     local.sumarIntento(fila.id, r.motivo)
@@ -52,7 +58,13 @@ class SincronizarUseCase(
         // Solo despues de subir se baja: invertirlo borra lo pendiente.
         val recibidos = when (val r = catalogo.descargar()) {
             is Resultado.Exito -> r.dato
-            is Resultado.Fallo -> return r
+            is Resultado.Fallo -> {
+                // La falta de red es normal; interesa registrar los fallos del servidor o inesperados.
+                if (r.error is ErrorApi.Servidor || r.error is ErrorApi.Desconocido) {
+                    telemetria.registrarError(r.error, mapOf("pantalla" to "productos", "operacion" to "descargar_catalogo"))
+                }
+                return r
+            }
         }
         catalogo.registrarSincronizacion(ahora())
 
