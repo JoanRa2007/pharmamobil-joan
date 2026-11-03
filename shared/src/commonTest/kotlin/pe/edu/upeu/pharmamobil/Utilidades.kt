@@ -15,7 +15,10 @@ import pe.edu.upeu.pharmamobil.data.local.EstadoSesion
 import pe.edu.upeu.pharmamobil.data.remote.ConfigPlataforma
 import pe.edu.upeu.pharmamobil.data.remote.PharmaApi
 import pe.edu.upeu.pharmamobil.data.remote.crearClienteHttp
+import pe.edu.upeu.pharmamobil.data.repository.EnvioRepositorioRest
+import pe.edu.upeu.pharmamobil.data.repository.ProductoLocalRepositoryImpl
 import pe.edu.upeu.pharmamobil.data.repository.ProductoRepositoryImpl
+import pe.edu.upeu.pharmamobil.domain.usecase.SincronizarUseCase
 import pe.edu.upeu.pharmamobil.db.PharmaDatabase
 import pe.edu.upeu.pharmamobil.domain.model.Sesion
 
@@ -43,6 +46,12 @@ open class Entorno(manejador: suspend MockRequestHandleScope.(HttpRequestData) -
     }
     val api = PharmaApi(crearClienteHttp(motor, almacen, estado, ConfigPlataforma("http://servidor/api/v1/")))
     val productos = ProductoRepositoryImpl(db, api, Dispatchers.Unconfined)
+    val local = ProductoLocalRepositoryImpl(db, Dispatchers.Unconfined)
+    val remoto = EnvioRepositorioRest(api)
+    val esperas = mutableListOf<Long>()
+
+    /** Caso de uso con la espera registrada en vez de real: las pruebas no duermen. */
+    open fun sincronizar() = SincronizarUseCase(local, remoto, productos, ahora = { 1L }, esperar = { esperas += it })
 }
 
 fun MockRequestHandleScope.json(cuerpo: String, estado: HttpStatusCode = HttpStatusCode.OK) =

@@ -14,9 +14,13 @@ import pe.edu.upeu.pharmamobil.data.local.abrir
 import pe.edu.upeu.pharmamobil.data.remote.PharmaApi
 import pe.edu.upeu.pharmamobil.data.remote.crearClienteHttp
 import pe.edu.upeu.pharmamobil.data.repository.ClienteRepositorioEnMemoria
+import pe.edu.upeu.pharmamobil.data.repository.EnvioRepositorioRest
+import pe.edu.upeu.pharmamobil.data.repository.ProductoLocalRepositoryImpl
 import pe.edu.upeu.pharmamobil.data.repository.ProductoRepositoryImpl
 import pe.edu.upeu.pharmamobil.data.repository.SesionRepositoryImpl
 import pe.edu.upeu.pharmamobil.domain.repository.ClienteRepository
+import pe.edu.upeu.pharmamobil.domain.repository.ProductoLocalRepository
+import pe.edu.upeu.pharmamobil.domain.repository.ProductoRemotoRepository
 import pe.edu.upeu.pharmamobil.domain.repository.ProductoRepository
 import pe.edu.upeu.pharmamobil.domain.repository.SesionRepository
 import pe.edu.upeu.pharmamobil.domain.usecase.CerrarSesionUseCase
@@ -57,6 +61,8 @@ val dataModule = module {
     single { get<BaseLocal>().abrir() }
     single<SesionRepository> { SesionRepositoryImpl(get(), get(), get(), get(CALIFICADOR_RELOJ)) }
     single<ProductoRepository> { ProductoRepositoryImpl(get(), get(), get(CALIFICADOR_IO)) }
+    single<ProductoLocalRepository> { ProductoLocalRepositoryImpl(get(), get(CALIFICADOR_IO)) }
+    single<ProductoRemotoRepository> { EnvioRepositorioRest(get()) }
     single<ClienteRepository> { ClienteRepositorioEnMemoria() }
 }
 
@@ -70,7 +76,7 @@ val domainModule = module {
     factory { ObservarUltimaSincronizacionUseCase(get()) }
     factory { RegistrarProductoUseCase(get()) }
     factory { EliminarProductoUseCase(get()) }
-    factory { SincronizarUseCase(get(), get(CALIFICADOR_RELOJ)) }
+    factory { SincronizarUseCase(get(), get(), get(), get(CALIFICADOR_RELOJ)) }
     factory { RegistrarClienteUseCase(get()) }
     factory { ListarClientesUseCase(get()) }
 }

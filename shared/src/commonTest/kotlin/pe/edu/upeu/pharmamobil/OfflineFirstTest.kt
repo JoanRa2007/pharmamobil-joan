@@ -8,7 +8,6 @@ import pe.edu.upeu.pharmamobil.domain.model.Producto
 import pe.edu.upeu.pharmamobil.domain.model.Resultado
 import pe.edu.upeu.pharmamobil.domain.model.ResumenSincronizacion
 import pe.edu.upeu.pharmamobil.domain.usecase.RegistrarProductoUseCase
-import pe.edu.upeu.pharmamobil.domain.usecase.SincronizarUseCase
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
@@ -50,7 +49,7 @@ class OfflineFirstTest {
         hayRed = true
         e.peticiones.clear()
 
-        val resumen = assertIs<Resultado.Exito<ResumenSincronizacion>>(SincronizarUseCase(e.productos) { 1L }()).dato
+        val resumen = assertIs<Resultado.Exito<ResumenSincronizacion>>(e.sincronizar()()).dato
 
         assertEquals("POST /api/v1/productos", e.peticiones.first(), "primero se sube lo pendiente")
         assertEquals(1, resumen.enviados)

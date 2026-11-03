@@ -14,7 +14,6 @@ import pe.edu.upeu.pharmamobil.data.remote.dto.aDominio
 import pe.edu.upeu.pharmamobil.data.remote.dto.aRequest
 import pe.edu.upeu.pharmamobil.db.PharmaDatabase
 import pe.edu.upeu.pharmamobil.domain.model.Categoria
-import pe.edu.upeu.pharmamobil.domain.model.ColaEnvio
 import pe.edu.upeu.pharmamobil.domain.model.ErrorApi
 import pe.edu.upeu.pharmamobil.domain.model.Producto
 import pe.edu.upeu.pharmamobil.domain.model.Resultado
@@ -98,33 +97,6 @@ class ProductoRepositoryImpl(
             withContext(io) { q.eliminarProducto(id) }
         }
         return r
-    }
-
-    override suspend fun enviarPendientes(): Resultado<Pair<Int, List<String>>> {
-        val pendientes = withContext(io) { q.pendientesPorEnviar(ColaEnvio.MAX_INTENTOS.toLong()).executeAsList().map { it.aDominio() } }
-        var enviadas = 0
-        val rechazos = mutableListOf<String>()
-        for (p in pendientes) {
-            val r = if (p.id < 0) api.crearProducto(p.aRequest()) else api.actualizarProducto(p.id, p.aRequest())
-            when (r) {
-                is Resultado.Exito -> {
-                    // La fila provisional se sustituye por la definitiva en la MISMA transaccion.
-                    withContext(io) {
-                        db.transaction {
-                            q.eliminarProducto(p.id)
-                            q.guardarProducto(r.dato.aDominio().aFila())
-                        }
-                    }
-                    enviadas++
-                }
-                is Resultado.Fallo -> {
-                    if (r.error.esDeRed || r.error is ErrorApi.NoAutorizado) return r
-                    rechazos += "${p.nombre}: ${r.error.message}"
-                    withContext(io) { q.eliminarProducto(p.id) }
-                }
-            }
-        }
-        return Resultado.Exito(enviadas to rechazos)
     }
 
     override suspend fun descargar(): Resultado<Int> {

@@ -15,9 +15,6 @@ interface ProductoRepository {
     suspend fun actualizar(producto: Producto): Resultado<Producto>
     suspend fun eliminar(id: Long): Resultado<Unit>
 
-    /** Envia las filas pendientes. Devuelve (enviadas, motivos de rechazo). */
-    suspend fun enviarPendientes(): Resultado<Pair<Int, List<String>>>
-
     /** Baja categorias y productos del servidor sin pisar filas pendientes. Devuelve cuantos productos bajo. */
     suspend fun descargar(): Resultado<Int>
     suspend fun registrarSincronizacion(instante: Long)
