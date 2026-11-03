@@ -1,6 +1,7 @@
 package pe.edu.upeu.pharmamobil.presentation.producto
 
 import pe.edu.upeu.pharmamobil.domain.model.Categoria
+import pe.edu.upeu.pharmamobil.presentation.sincronizacion.SincronizacionUiState
 
 data class ProductoUiState(
     val fase: Fase = Fase.Cargando,
@@ -10,9 +11,7 @@ data class ProductoUiState(
     val mensajeExito: String? = null,
     /** Se decide por permiso de la sesion (el servidor igual responde 403 si no lo tiene). */
     val puedeEscribir: Boolean = false,
-    val sincronizando: Boolean = false,
-    val conectado: Boolean = true,
-    val ultimaSync: Long? = null,
+    val sincronizacion: SincronizacionUiState = SincronizacionUiState(),
 ) {
 
     /** Fases excluyentes del inventario: solo una puede estar activa. */

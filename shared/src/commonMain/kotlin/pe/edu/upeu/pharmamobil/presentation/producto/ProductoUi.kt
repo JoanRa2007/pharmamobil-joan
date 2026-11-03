@@ -12,6 +12,9 @@ data class ProductoUi(
     val categoria: String,
     val requiereReposicion: Boolean,
     val pendiente: Boolean,
+    val fallido: Boolean,
+    val intentos: Int,
+    val ultimoError: String?,
     /** Dominio original, para precargar el formulario al corregir. */
     val producto: Producto,
 )
@@ -24,6 +27,9 @@ fun Producto.aUi(): ProductoUi = ProductoUi(
     categoria = categoriaNombre,
     requiereReposicion = requiereReposicion,
     pendiente = pendiente,
+    fallido = fallido,
+    intentos = intentos,
+    ultimoError = ultimoError,
     producto = this,
 )
 

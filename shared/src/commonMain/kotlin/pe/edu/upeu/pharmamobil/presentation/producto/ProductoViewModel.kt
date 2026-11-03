@@ -16,13 +16,17 @@ import pe.edu.upeu.pharmamobil.domain.model.Resultado
 import pe.edu.upeu.pharmamobil.domain.repository.MonitorConexion
 import pe.edu.upeu.pharmamobil.domain.usecase.EliminarProductoUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarCategoriasUseCase
+import pe.edu.upeu.pharmamobil.domain.usecase.ObservarFallidasUseCase
+import pe.edu.upeu.pharmamobil.domain.usecase.ObservarPendientesUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarProductosUseCase
+import pe.edu.upeu.pharmamobil.domain.usecase.ReintentarFallidasUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarSesionUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarUltimaSincronizacionUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.RegistrarProductoUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.SincronizarUseCase
 import pe.edu.upeu.pharmamobil.presentation.comun.Aviso
 import pe.edu.upeu.pharmamobil.presentation.comun.Avisos
+import pe.edu.upeu.pharmamobil.presentation.sincronizacion.SincronizacionUiState
 
 /**
  * Inventario offline-first: la pantalla observa la BASE LOCAL; la red solo se usa para
@@ -33,6 +37,9 @@ class ProductoViewModel(
     observarCategorias: ObservarCategoriasUseCase,
     observarUltimaSincronizacion: ObservarUltimaSincronizacionUseCase,
     observarSesion: ObservarSesionUseCase,
+    observarPendientes: ObservarPendientesUseCase,
+    observarFallidas: ObservarFallidasUseCase,
+    private val reintentarFallidasUseCase: ReintentarFallidasUseCase,
     private val registrarProducto: RegistrarProductoUseCase,
     private val eliminarProducto: EliminarProductoUseCase,
     private val sincronizarUseCase: SincronizarUseCase,
@@ -46,12 +53,26 @@ class ProductoViewModel(
 
     private data class Operacion(val registrando: Boolean = false, val sincronizando: Boolean = false, val exito: String? = null)
 
+    /** El estado de la sincronizacion se arma con consultas observables de la base local, nunca con la red. */
+    private val sincronizacion = combine(
+        observarPendientes(), observarFallidas(), observarUltimaSincronizacion(), operacion, monitor.conectado,
+    ) { pendientes, fallidas, ultima, op, red ->
+        SincronizacionUiState(
+            enCurso = op.sincronizando,
+            conectado = red,
+            pendientes = pendientes.toInt(),
+            fallidas = fallidas.toInt(),
+            ultimaSync = ultima,
+        )
+    }
+
     val uiState: StateFlow<ProductoUiState> = combine(
-        combine(observarProductos(), observarCategorias(), ::Pair),
+        combine(observarProductos(), observarCategorias()) { p, c -> Pair(p, c) },
         formulario,
         operacion,
-        combine(observarSesion(), monitor.conectado, observarUltimaSincronizacion()) { s, red, ultima -> Triple(s, red, ultima) },
-    ) { (productos, categorias), form, op, (sesion, red, ultima) ->
+        observarSesion(),
+        sincronizacion,
+    ) { (productos, categorias), form, op, sesion, sinc ->
         ProductoUiState(
             fase = if (productos.isEmpty()) ProductoUiState.Fase.SinProductos
             else ProductoUiState.Fase.ConProductos(productos.map { it.aUi() }),
@@ -60,9 +81,7 @@ class ProductoViewModel(
             registrando = op.registrando,
             mensajeExito = op.exito,
             puedeEscribir = sesion?.tiene(Permisos.CATALOGO_ESCRIBIR) == true,
-            sincronizando = op.sincronizando,
-            conectado = red,
-            ultimaSync = ultima,
+            sincronizacion = sinc,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ProductoUiState())
 
@@ -130,14 +149,34 @@ class ProductoViewModel(
         }
     }
 
+    /** Accion del usuario ante filas fallidas: vuelven a la cola y se sincroniza de inmediato. */
+    fun reintentarFallidas() {
+        viewModelScope.launch {
+            reintentarFallidasUseCase()
+            sincronizar()
+        }
+    }
+
     /** Primero sube lo pendiente y luego baja lo actualizado. */
     fun sincronizar() {
+        if (!monitor.conectado.value) {
+            // Sin red no se gastan intentos ni bateria: lo pendiente espera a que vuelva la senal.
+            avisos.mostrar("Sin conexión: se sincronizará al recuperar la señal")
+            return
+        }
         if (!candado.tryLock()) return
         viewModelScope.launch {
             operacion.update { it.copy(sincronizando = true) }
             try {
                 when (val r = sincronizarUseCase()) {
-                    is Resultado.Exito -> avisos.mostrar(r.dato.texto())
+                    is Resultado.Exito -> {
+                        val resumen = r.dato
+                        if (resumen.fallidos > 0) {
+                            avisos.mostrar(Aviso(resumen.texto(), "Reintentar") { reintentarFallidas() })
+                        } else {
+                            avisos.mostrar(resumen.texto())
+                        }
+                    }
                     is Resultado.Fallo -> when (val e = r.error) {
                         ErrorApi.SinConexion, ErrorApi.TiempoAgotado ->
                             avisos.mostrar("Sin conexión: se sincronizará al recuperar la señal")

@@ -23,10 +23,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.material.icons.filled.CloudDone
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Sync
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
@@ -39,6 +37,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import pe.edu.upeu.pharmamobil.presentation.components.EstadoVacio
+import pe.edu.upeu.pharmamobil.presentation.sincronizacion.BarraSincronizacion
 import pe.edu.upeu.pharmamobil.presentation.components.MensajeExito
 import pe.edu.upeu.pharmamobil.presentation.components.ValidatedTextField
 
@@ -57,9 +56,10 @@ fun ProductoScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
 
-        EstadoSincronizacion(
-            estado = uiState,
-            onSincronizar = viewModel::sincronizar
+        BarraSincronizacion(
+            estado = uiState.sincronizacion,
+            onSincronizar = viewModel::sincronizar,
+            onReintentarFallidas = viewModel::reintentarFallidas
         )
 
         // Solo se ofrece a quien tiene CATALOGO_ESCRIBIR (el servidor igual lo valida).
@@ -322,10 +322,18 @@ private fun ProductoItem(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
 
-                if (producto.pendiente) {
+                if (producto.fallido) {
+                    // Agoto los intentos o PharmaSoft lo rechazo: queda visible con su motivo.
+                    Text(
+                        text = "No enviado: ${producto.ultimoError.orEmpty()}. Corrígelo o descártalo.",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.error
+                    )
+                } else if (producto.pendiente) {
                     // Marca de fila pendiente de envio (id provisional negativo si es una creacion).
                     Text(
-                        text = "Pendiente de envío",
+                        text = if (producto.intentos == 0) "Pendiente de envío"
+                        else "Pendiente · intento ${producto.intentos} falló: ${producto.ultimoError.orEmpty()}",
                         style = MaterialTheme.typography.labelSmall,
                         color = MaterialTheme.colorScheme.tertiary
                     )
@@ -367,37 +375,3 @@ private fun ProductoItem(
     }
 }
 
-
-@Composable
-private fun EstadoSincronizacion(
-    estado: ProductoUiState,
-    onSincronizar: () -> Unit
-) {
-
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-
-        Icon(
-            imageVector = if (estado.conectado) Icons.Default.CloudDone else Icons.Default.CloudOff,
-            contentDescription = null,
-            tint = if (estado.conectado) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
-        )
-
-        Text(
-            text = if (estado.conectado) "En línea" else "Sin conexión",
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.weight(1f)
-        )
-
-        if (estado.sincronizando) {
-            CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
-        } else {
-            IconButton(onClick = onSincronizar) {
-                Icon(imageVector = Icons.Default.Sync, contentDescription = "Sincronizar")
-            }
-        }
-    }
-}

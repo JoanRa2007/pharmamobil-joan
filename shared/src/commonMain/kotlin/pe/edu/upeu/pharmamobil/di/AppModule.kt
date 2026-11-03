@@ -28,6 +28,9 @@ import pe.edu.upeu.pharmamobil.domain.usecase.EliminarProductoUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.IniciarSesionUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ListarClientesUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarCategoriasUseCase
+import pe.edu.upeu.pharmamobil.domain.usecase.ObservarFallidasUseCase
+import pe.edu.upeu.pharmamobil.domain.usecase.ObservarPendientesUseCase
+import pe.edu.upeu.pharmamobil.domain.usecase.ReintentarFallidasUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarProductosUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarSesionUseCase
 import pe.edu.upeu.pharmamobil.domain.usecase.ObservarUltimaSincronizacionUseCase
@@ -76,6 +79,9 @@ val domainModule = module {
     factory { ObservarUltimaSincronizacionUseCase(get()) }
     factory { RegistrarProductoUseCase(get()) }
     factory { EliminarProductoUseCase(get()) }
+    factory { ObservarPendientesUseCase(get()) }
+    factory { ObservarFallidasUseCase(get()) }
+    factory { ReintentarFallidasUseCase(get()) }
     factory { SincronizarUseCase(get(), get(), get(), get(CALIFICADOR_RELOJ)) }
     factory { RegistrarClienteUseCase(get()) }
     factory { ListarClientesUseCase(get()) }
@@ -86,7 +92,7 @@ val presentationModule = module {
     viewModel { RaizViewModel(get(), get()) }
     viewModel { LoginViewModel(get()) }
     viewModel { PerfilViewModel(get(), get()) }
-    viewModel { ProductoViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get()) }
+    viewModel { ProductoViewModel(get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get(), get()) }
     viewModel { ClienteViewModel(get(), get()) }
 }
 
