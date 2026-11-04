@@ -10,15 +10,17 @@ plugins {
 }
 
 kotlin {
-    listOf(
-        iosArm64(),
-        iosSimulatorArm64()
-    ).forEach { iosTarget ->
-        iosTarget.binaries.framework {
-            baseName = "Shared"
-            isStatic = true
-        }
-    }
+    // iOS desactivado en esta copia: en Windows no se puede compilar y su compilador nativo pesa ~1 GB.
+    // Para reactivarlo en una Mac, descomenta este bloque y el de iosMain.dependencies.
+    // listOf(
+    //     iosArm64(),
+    //     iosSimulatorArm64()
+    // ).forEach { iosTarget ->
+    //     iosTarget.binaries.framework {
+    //         baseName = "Shared"
+    //         isStatic = true
+    //     }
+    // }
     
     android {
        namespace = "pe.edu.upeu.pharmamobil.shared"
@@ -52,10 +54,10 @@ kotlin {
             implementation(libs.androidx.security.crypto)
             implementation(libs.androidx.activity.compose)
         }
-        iosMain.dependencies {
-            implementation(libs.ktor.client.darwin)
-            implementation(libs.sqldelight.native.driver)
-        }
+        // iosMain.dependencies {
+        //     implementation(libs.ktor.client.darwin)
+        //     implementation(libs.sqldelight.native.driver)
+        // }
         commonMain.dependencies {
             // api: androidApp llama a initKoin(), cuya firma expone KoinAppDeclaration.
             api(libs.koin.core)
