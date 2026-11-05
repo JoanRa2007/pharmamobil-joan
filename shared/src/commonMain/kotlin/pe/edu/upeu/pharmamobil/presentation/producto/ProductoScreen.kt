@@ -317,7 +317,7 @@ private fun ProductoItem(
                 )
 
                 Text(
-                    text = "${producto.precio}  ·  ${producto.stock}  ·  ${producto.categoria}",
+                    text = "ID ${producto.id}  ·  ${producto.precio}  ·  ${producto.stock}  ·  ${producto.categoria}",
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
