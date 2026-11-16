@@ -1,0 +1,3 @@
+-- Migracion de la version 1 a la 2 (sesion 13): estado de envio por fila.
+ALTER TABLE producto ADD COLUMN intentos INTEGER NOT NULL DEFAULT 0;
+ALTER TABLE producto ADD COLUMN ultimoError TEXT;

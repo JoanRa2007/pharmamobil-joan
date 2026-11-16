@@ -5,6 +5,13 @@ plugins {
     alias(libs.plugins.composeCompiler)
 }
 
+// Firebase (sesion 13): los complementos leen androidApp/google-services.json.
+// Si el archivo aun no existe, la app compila igual y la telemetria simplemente no se envia.
+if (file("google-services.json").exists()) {
+    apply(plugin = "com.google.gms.google-services")
+    apply(plugin = "com.google.firebase.crashlytics")
+}
+
 kotlin {
     compilerOptions {
         jvmTarget = JvmTarget.JVM_11

@@ -3,7 +3,7 @@ package pe.edu.upeu.pharmamobil.data.repository
 import pe.edu.upeu.pharmamobil.domain.model.Cliente
 import pe.edu.upeu.pharmamobil.domain.repository.ClienteRepository
 
-/** Doble de la cartera de clientes, gemelo de [FakeProductoRepository]. */
+/** Doble de la cartera de clientes, con la misma idea que los fakes de las demas pruebas. */
 class FakeClienteRepository(
     private val clientes: MutableList<Cliente> = mutableListOf()
 ) : ClienteRepository {
